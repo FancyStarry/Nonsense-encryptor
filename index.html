@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本替换编码转换器</title>
+    <!-- MODIFIED: Favicon is now the character '文' -->
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">文</text></svg>'>
+    <style>
+        :root { --bg-color: #f0f2f5; --container-bg: #ffffff; --text-color: #333333; --border-color: #dcdfe6; --button-bg: #409eff; --button-text: #ffffff; --button-hover-bg: #66b1ff; --shadow-color: rgba(0, 0, 0, 0.1); --error-color: #f56c6c; --success-color: #67c23a; --theme-icon: '☀️'; }
+        body.dark-mode { --bg-color: #1a1a1a; --container-bg: #2c2c2c; --text-color: #e0e0e0; --border-color: #444444; --button-bg: #585ce5; --button-hover-bg: #797ee8; --shadow-color: rgba(0, 0, 0, 0.3); --error-color: #ff7676; --success-color: #85d861; --theme-icon: '🌙'; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; transition: background-color 0.3s, color 0.3s; padding: 20px; }
+        .content-wrapper { display: flex; align-items: flex-start; gap: 20px; width: 100%; max-width: 1200px; justify-content: center; }
+        .main-container { width: 100%; max-width: 600px; background-color: var(--container-bg); padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); transition: background-color 0.3s; flex-shrink: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        h1 { font-size: 24px; color: var(--text-color); }
+        #theme-toggle { font-size: 24px; background: none; border: none; cursor: pointer; padding: 5px; }
+        #theme-toggle::after { content: var(--theme-icon); }
+        textarea { width: 100%; height: 180px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-color); color: var(--text-color); font-size: 16px; resize: vertical; margin-bottom: 20px; transition: background-color 0.3s, border-color 0.3s; }
+        textarea:focus, input:focus { outline: none; border-color: var(--button-bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--button-bg) 30%, transparent); }
+        .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        button { padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background-color: var(--button-bg); color: var(--button-text); transition: background-color 0.2s, transform 0.1s; }
+        button:hover { background-color: var(--button-hover-bg); }
+        button:active { transform: scale(0.98); }
+        #copy-btn { grid-column: 1 / -1; background-color: var(--success-color); }
+        #copy-btn:hover { background-color: color-mix(in srgb, var(--success-color) 85%, #000); }
+        #main-error-message { color: var(--error-color); font-size: 14px; margin-top: -15px; margin-bottom: 15px; height: 1.2em; text-align: center; }
+
+        #sub-panel, #about-panel { width: 280px; background-color: var(--container-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow-color); transition: background-color 0.3s; flex-shrink: 0; }
+        #sub-panel h3, #about-panel h3 { text-align: center; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        #sub-panel-error { font-size: 12px; text-align: center; height: 1.5em; margin-bottom: 10px; font-weight: bold;}
+        #sub-panel-error.success { color: var(--success-color); } #sub-panel-error.error { color: var(--error-color); }
+        .quick-fill-container { display: flex; gap: 8px; margin-bottom: 15px; }
+        #quick-fill-input { flex-grow: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--bg-color); color: var(--text-color); }
+        #quick-fill-apply-btn { padding: 0 12px; font-size: 14px; flex-shrink: 0; }
+        .sub-panel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .input-group { display: flex; flex-direction: column; align-items: center; }
+        .input-group label { font-weight: bold; margin-bottom: 4px; font-size: 14px; }
+        .input-group input { width: 100%; max-width: 45px; height: 35px; text-align: center; border: 1px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); border-radius: 6px; font-size: 16px; padding: 0 4px; }
+        #apply-map-btn { width: 100%; margin-top: 20px; }
+        
+        #about-panel h4 { font-size: 15px; margin-top: 20px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); color: var(--button-bg); }
+        #about-panel p, #about-panel li { font-size: 14px; line-height: 1.65; color: var(--text-color); }
+        #about-panel ul, #about-panel ol { padding-left: 22px; list-style-position: outside; }
+        #about-panel li + li { margin-top: 8px; }
+        #about-panel code { color: var(--button-bg); font-family: Consolas, 'Courier New', monospace; background-color: color-mix(in srgb, var(--border-color) 40%, transparent); padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+
+        @media (max-width: 960px) {
+            .content-wrapper { flex-direction: column; align-items: center; max-width: 600px; }
+            .main-container, #sub-panel, #about-panel { width: 100%; margin-bottom: 15px; }
+            .main-container { order: 1; } #sub-panel { order: 2; } #about-panel { order: 3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <div id="about-panel">
+            <h3>关于此项目</h3>
+            <h4>工作原理</h4>
+            <p>将任意文本转为 <code>UTF-8</code> 十六进制，再根据右侧的自定义表进行字符替换。</p>
+            <h4>使用步骤</h4>
+            <ol>
+                <li><strong>定义</strong>: 在右侧填入16个不重复的字符。</li>
+                <li><strong>应用</strong>: 点击“应用并验证”保存替换表。</li>
+                <li><strong>转换</strong>: 在中间输入文本，开始编/解码。</li>
+            </ol>
+            <h4>主要特色</h4>
+            <ul>
+                <li>支持全球语言及 Emoji</li>
+                <li>纯本地计算，安全可靠</li>
+                <li>智能验证与深色模式</li>
+            </ul>
+        </div>
+
+        <div class="main-container">
+            <div class="header"><h1>文本 <> 替换编码转换器</h1><button id="theme-toggle" title="切换深色/浅色模式"></button></div>
+            <textarea id="input-text" placeholder="在此输入要编码的文本..."></textarea>
+            <div class="buttons"><button id="encrypt-btn">编码</button><button id="decrypt-btn">解码</button></div>
+            <div id="main-error-message"></div>
+            <textarea id="output-text" placeholder="结果将显示在此处..." readonly></textarea>
+            <button id="copy-btn">复制结果</button>
+        </div>
+
+        <div id="sub-panel">
+            <h3>自定义替换表 (0-F)</h3>
+             <div class="quick-fill-container"><input type="text" id="quick-fill-input" placeholder="输入字符快速填充..."><button id="quick-fill-apply-btn">填充</button></div>
+            <div id="sub-panel-error"></div>
+            <div class="sub-panel-grid" id="sub-panel-grid"></div>
+            <button id="apply-map-btn">应用并验证</button>
+        </div>
+    </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Selectors
+    const [inputText, outputText, encryptBtn, decryptBtn, copyBtn, themeToggle, mainErrorMessage, subPanel] = 
+          ['input-text', 'output-text', 'encrypt-btn', 'decrypt-btn', 'copy-btn', 'theme-toggle', 'main-error-message', 'sub-panel']
+          .map(id => document.getElementById(id));
+    const [subPanelGrid, applyMapBtn, subPanelError, quickFillInput, quickFillApplyBtn] = 
+          ['sub-panel-grid', 'apply-map-btn', 'sub-panel-error', 'quick-fill-input', 'quick-fill-apply-btn']
+          .map(id => document.getElementById(id));
+
+    // Global State
+    const HEX_CHARS = '0123456789abcdef'.split('');
+    let customMap = null; 
+    let customReverseMap = null;
+
+    // --- Core Logic ---
+    function textToUtf8Hex(text) {
+        const encoder = new TextEncoder();
+        return Array.from(encoder.encode(text)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    function utf8HexToText(hexString) {
+        if (hexString.length % 2 !== 0) throw new Error("无效的编码长度。");
+        const bytes = new Uint8Array(hexString.length / 2);
+        for (let i = 0; i < hexString.length; i += 2) {
+            bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+        }
+        const decoder = new TextDecoder('utf-8', { fatal: true });
+        return decoder.decode(bytes);
+    }
+    
+    function applyCustomMapping(hexString) {
+        if (!customMap) throw new Error("请先“应用并验证”您的替换表。");
+        return hexString.split('').map(char => customMap[char]).join('');
+    }
+
+    function revertCustomMapping(customString) {
+        if (!customReverseMap) throw new Error("请先“应用并验证”您的替换表。");
+        const revertedHex = customString.split('').map(char => {
+            const hex = customReverseMap[char];
+            if (hex === undefined) throw new Error(`解码失败：字符 "${char}" 不在替换表中。`);
+            return hex;
+        }).join('');
+        return revertedHex;
+    }
+
+    // --- Event Handlers ---
+    encryptBtn.addEventListener('click', () => {
+        mainErrorMessage.textContent = '';
+        if (!inputText.value) return;
+        try {
+            outputText.value = applyCustomMapping(textToUtf8Hex(inputText.value));
+        } catch (error) {
+            mainErrorMessage.textContent = `编码失败: ${error.message}`;
+            if (window.matchMedia('(max-width: 960px)').matches && !customMap) {
+                subPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+
+    decryptBtn.addEventListener('click', () => {
+        mainErrorMessage.textContent = '';
+        if (!inputText.value) return;
+        try {
+            outputText.value = utf8HexToText(revertCustomMapping(inputText.value));
+        } catch (error) {
+            mainErrorMessage.textContent = `解码失败: ${error.message}`;
+            if (window.matchMedia('(max-width: 960px)').matches && !customReverseMap) {
+                 subPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+    
+    quickFillApplyBtn.addEventListener('click', () => {
+        const uniqueChars = Array.from(new Set(quickFillInput.value.split('')));
+        subPanelGrid.querySelectorAll('input').forEach((input, index) => { input.value = uniqueChars[index] || ''; });
+    });
+
+    applyMapBtn.addEventListener('click', () => {
+        const inputs = Array.from(subPanelGrid.querySelectorAll('input'));
+        const newMap = {}, newReverseMap = {}, usedChars = new Set();
+        customMap = customReverseMap = null;
+        for (const input of inputs) {
+            const customChar = input.value;
+            if (!customChar) { subPanelError.textContent = '错误: 请填写所有16个替换字符。'; subPanelError.className = 'error'; return; }
+            if (customChar.length > 1) { subPanelError.textContent = '错误: 每个格子只能填一个字符。'; subPanelError.className = 'error'; return; }
+            if (usedChars.has(customChar)) { subPanelError.textContent = `错误: 字符 "${customChar}" 被重复使用。`; subPanelError.className = 'error'; return; }
+            usedChars.add(customChar);
+            newMap[input.dataset.hex] = customChar;
+        }
+        customMap = newMap;
+        for (const key in customMap) { newReverseMap[customMap[key]] = key; }
+        customReverseMap = newReverseMap;
+        subPanelError.textContent = '验证成功, 已应用！'; subPanelError.className = 'success';
+        applyMapBtn.textContent = '已应用';
+        setTimeout(() => { applyMapBtn.textContent = '应用并验证'; subPanelError.textContent = ''; }, 2000);
+    });
+
+    copyBtn.addEventListener('click', () => { if (outputText.value) { navigator.clipboard.writeText(outputText.value).then(() => { copyBtn.innerText = '已复制！'; setTimeout(() => { copyBtn.innerText = '复制结果'; }, 1500); }); } });
+    themeToggle.addEventListener('click', () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); });
+    
+    // --- Initialization ---
+    function initialize() {
+        if (localStorage.getItem('theme') !== 'light') document.body.classList.add('dark-mode');
+        quickFillInput.value = '齁哦噢喔咕咿嗯啊～哈！唔哼❤呃呼';
+        HEX_CHARS.forEach(char => {
+            const group = document.createElement('div'); group.className = 'input-group';
+            const label = document.createElement('label'); label.textContent = char.toUpperCase();
+            const input = document.createElement('input'); input.type = 'text'; input.maxLength = 1; input.dataset.hex = char;
+            group.append(label, input);
+            subPanelGrid.appendChild(group);
+        });
+    }
+    initialize();
+});
+</script>
+</body>
+</html>
